@@ -27,7 +27,7 @@ RUN \
   else echo "Lockfile not found." && exit 1; \
   fi
 
-RUN pnpm migrate
+
 
 FROM base AS runner
 WORKDIR /app
