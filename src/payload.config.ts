@@ -1,24 +1,27 @@
-import { mongooseAdapter } from '@payloadcms/db-mongodb'
+import { mongooseAdapter } from '@payloadcms/db-mongodb';
 // import { payloadCloud } from '@payloadcms/plugin-cloud'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import path from 'path'
-import { buildConfig } from 'payload/config'
-// import sharp from 'sharp'
-import { fileURLToPath } from 'url'
+import { lexicalEditor } from '@payloadcms/richtext-lexical';
+import { s3Storage } from '@payloadcms/storage-s3';
+import path from 'path';
+import { buildConfig } from 'payload/config';
+import sharp from 'sharp'
+import { fileURLToPath } from 'url';
 
-import { Users } from './collections/Users'
-import { ApiUsers } from './collections/ApiUsers'
+import { Users } from './collections/Users';
+import { ApiUsers } from './collections/ApiUsers';
+import { Photographs } from './collections/New Topographics/Photographs';
+import { Exhibitions } from './collections/New Topographics/Exhibitions';
+import { Photographers } from './collections/New Topographics/Photographers';
 
-const filename = fileURLToPath(import.meta.url)
-const dirname = path.dirname(filename)
+const filename = fileURLToPath(import.meta.url);
+const dirname = path.dirname(filename);
 
 export default buildConfig({
   admin: {
     user: Users.slug,
   },
-  collections: [Users, ApiUsers],
+  collections: [Users, ApiUsers, Photographs, Exhibitions, Photographers],
   editor: lexicalEditor({}),
-  // plugins: [payloadCloud()], // TODO: Re-enable when cloud supports 3.0
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
@@ -26,13 +29,21 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-
-  // Sharp is now an optional dependency -
-  // if you want to resize images, crop, set focal point, etc.
-  // make sure to install it and pass it to the config.
-
-  // This is temporary - we may make an adapter pattern
-  // for this before reaching 3.0 stable
-
-  // sharp,
-})
+  plugins: [
+    s3Storage({
+      collections: {
+        photographs: true,
+      },
+      bucket: process.env.R2_NEWTOPO_BUCKET!,
+      config: {
+        endpoint: process.env.R2_ENDPOINT!,
+        credentials: {
+          accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+        },
+        region: process.env.R2_REGION!,
+      },
+    }),
+  ],
+  sharp,
+});
